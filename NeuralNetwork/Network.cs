@@ -24,15 +24,15 @@ namespace NeuralNetwork
         {
             // the input values
             double[,] inputs =
-            {
-                { 0, 0},
-                { 0, 1},
-                { 1, 0},
-                { 1, 1}
-            };
+             {
+                 { 0, 0},
+                 { 0, 1},
+                 { 1, 0},
+                 { 1, 1}
+             };
 
-            // desired results
-            double[] results = { 0, 1, 1, 0 };
+             // desired results
+             double[] results = { 0, 1, 1, 0 };
 
             int epoch = 0;
 
