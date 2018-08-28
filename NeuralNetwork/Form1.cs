@@ -17,6 +17,7 @@ namespace NeuralNetwork
         {
             InitializeComponent();
             xornet = new Network();
+            xornet.MakeXOR();
         }
 
         private void ButtonXOR_Click(object sender, EventArgs e)
@@ -25,11 +26,12 @@ namespace NeuralNetwork
             int var2;
             Int32.TryParse(textBox1.Text, out var1);
             Int32.TryParse(textBox2.Text, out var2);
-            xornet.hiddenNeuron1.inputs = new double[] { var1, var2 };
-            xornet.hiddenNeuron2.inputs = new double[] { var1, var2 };
+            xornet.InputNeurons[0].output = var1;
+            xornet.InputNeurons[1].output = var2;
 
-            xornet.outputNeuron.inputs = new double[] { xornet.hiddenNeuron1.output, xornet.hiddenNeuron2.output };
-            textBox3.Text = Math.Round(xornet.outputNeuron.output) + " ("+ xornet.outputNeuron.output + ")";
+
+
+             textBox3.Text = Math.Round(xornet.outputNeurons[0].output) + " ("+ xornet.outputNeurons[0].output + ")";
 
         }
 

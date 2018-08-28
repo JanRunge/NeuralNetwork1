@@ -8,20 +8,58 @@ namespace NeuralNetwork
 {
     class Network
     {
-        public Neuron hiddenNeuron1;
-        public Neuron hiddenNeuron2;
-        public Neuron outputNeuron;
+        public InputNeuron[] InputNeurons;
+        private Neuron[] hiddenNeurons;
+        public Neuron[] outputNeurons;
+        public string type;
         public Network()
         {
-            hiddenNeuron1 = new Neuron();
-            hiddenNeuron2 = new Neuron();
-            outputNeuron = new Neuron();
-            hiddenNeuron1.randomizeWeights();
-            hiddenNeuron2.randomizeWeights();
-            outputNeuron.randomizeWeights();
+
         }
-        public  void train()
+        public void MakeXOR()
         {
+            int i;
+            /*****************************
+             InputNeurons
+             ****************************/
+            InputNeurons = new InputNeuron[] { new InputNeuron(), new InputNeuron() };
+            i = 0;
+            foreach (InputNeuron curNeur in InputNeurons)
+            {
+                i++;
+                curNeur.name = "inputNeuron " + i;
+            }
+            /*****************************
+            HiddenNeurons
+            ****************************/
+            hiddenNeurons = new Neuron[] { new Neuron(), new Neuron() };
+            i = 0;
+            foreach (Neuron curNeur in hiddenNeurons)
+            {
+                i++;
+                curNeur.name = "hiddenNeuron " + i;
+                curNeur.randomizeWeights();
+                curNeur.inputs = new Neuron[] { InputNeurons[0], InputNeurons[1] };
+            }
+
+            /*****************************
+            OutputNeurons
+            ****************************/
+            outputNeurons = new Neuron[] { new Neuron() };
+            i = 0;
+            foreach (Neuron curNeur in outputNeurons)
+            {
+                i++;
+                curNeur.name = "OutputNeuron " + i;
+                curNeur.randomizeWeights();
+                curNeur.inputs = new Neuron[] { hiddenNeurons[0], hiddenNeurons[1] };
+
+            }
+
+        }
+        public void train()
+        {
+            Console.WriteLine("starting training");
             // the input values
             double[,] inputs =
              {
@@ -31,8 +69,8 @@ namespace NeuralNetwork
                  { 1, 1}
              };
 
-             // desired results
-             double[] results = { 0, 1, 1, 0 };
+            // desired results
+            double[] results = { 0, 1, 1, 0 };
 
             int epoch = 0;
 
@@ -41,29 +79,29 @@ namespace NeuralNetwork
                 epoch++;
                 for (int i = 0; i < 4; i++)  // very important, do NOT train for only one example
                 {
-                    // 1) forward propagation (calculates output)
-                    hiddenNeuron1.inputs = new double[] { inputs[i, 0], inputs[i, 1] };
-                    hiddenNeuron2.inputs = new double[] { inputs[i, 0], inputs[i, 1] };
+                    InputNeurons[0].output = inputs[i, 0];
+                    InputNeurons[1].output = inputs[i, 1];
 
-                    outputNeuron.inputs = new double[] { hiddenNeuron1.output, hiddenNeuron2.output };
-
-                    //Console.WriteLine("{0} xor {1} = {2}", inputs[i, 0], inputs[i, 1], outputNeuron.output);
+                    Console.WriteLine("{0} xor {1} = {2}", inputs[i, 0], inputs[i, 1], outputNeurons[0].output);
 
                     // 2) back propagation (adjusts weights)
 
                     // adjusts the weight of the output neuron, based on its error
-                    outputNeuron.error = Sigmoid.derivative(outputNeuron.output) * (results[i] - outputNeuron.output);
-                    outputNeuron.adjustWeights();
+                    outputNeurons[0].error = Sigmoid.derivative(outputNeurons[0].output) * (results[i] - outputNeurons[0].output);
+                    outputNeurons[0].adjustWeights();
 
                     // then adjusts the hidden neurons' weights, based on their errors
-                    hiddenNeuron1.error = Sigmoid.derivative(hiddenNeuron1.output) * outputNeuron.error * outputNeuron.weights[0];
-                    hiddenNeuron2.error = Sigmoid.derivative(hiddenNeuron2.output) * outputNeuron.error * outputNeuron.weights[1];
+                    hiddenNeurons[0].error = Sigmoid.derivative(hiddenNeurons[0].output) * outputNeurons[0].error * outputNeurons[0].weights[0];
+                    hiddenNeurons[1].error = Sigmoid.derivative(hiddenNeurons[1].output) * outputNeurons[0].error * outputNeurons[0].weights[1];
 
-                    hiddenNeuron1.adjustWeights();
-                    hiddenNeuron2.adjustWeights();
+                    hiddenNeurons[0].adjustWeights();
+                    hiddenNeurons[1].adjustWeights();
+
+
                 }
             }
-            
+            Console.WriteLine("Training finished");
+
         }
     }
 }

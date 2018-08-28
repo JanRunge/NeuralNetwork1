@@ -8,16 +8,18 @@ namespace NeuralNetwork
 {
     class Neuron
     {
-        public double[] inputs = new double[2];
+        public Neuron[] inputs = new Neuron[2];
         public double[] weights = new double[2];
         public double error;
         private double biasWeight;
         private Random r = new Random();
+        public String name;
 
 
-        public double output
+        public virtual double output
         {
-            get { return Sigmoid.output(weights[0] * inputs[0] + weights[1] * inputs[1] + biasWeight); }
+            get { return Sigmoid.output(weights[0] * inputs[0].output + weights[1] * inputs[1].output + biasWeight); }
+            set { }
         }
 
         public void randomizeWeights()
@@ -29,8 +31,8 @@ namespace NeuralNetwork
 
         public void adjustWeights()
         {
-            weights[0] += error * inputs[0];
-            weights[1] += error * inputs[1];
+            weights[0] += error * inputs[0].output;
+            weights[1] += error * inputs[1].output;
             biasWeight += error;
         }
     }
