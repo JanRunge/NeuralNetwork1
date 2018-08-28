@@ -18,6 +18,12 @@ namespace NeuralNetwork
         }
         public void MakeXOR()
         {
+            //Create all neurons that are needed, so that the network can learn how XOR works
+            /*
+             Needs 2 input neurons
+                   2 hidden neurons
+                   1 output neuron
+             */
             int i;
             /*****************************
              InputNeurons
@@ -57,7 +63,7 @@ namespace NeuralNetwork
             }
 
         }
-        public void train()
+        public void trainXOR()
         {
             Console.WriteLine("starting training");
             // the input values
@@ -79,10 +85,11 @@ namespace NeuralNetwork
                 epoch++;
                 for (int i = 0; i < 4; i++)  // very important, do NOT train for only one example
                 {
+                    //set Inputvars
                     InputNeurons[0].output = inputs[i, 0];
                     InputNeurons[1].output = inputs[i, 1];
 
-                    Console.WriteLine("{0} xor {1} = {2}", inputs[i, 0], inputs[i, 1], outputNeurons[0].output);
+                    //Console.WriteLine("{0} xor {1} = {2}", inputs[i, 0], inputs[i, 1], outputNeurons[0].output);
 
                     // 2) back propagation (adjusts weights)
 

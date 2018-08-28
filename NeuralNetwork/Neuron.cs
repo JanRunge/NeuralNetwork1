@@ -18,6 +18,7 @@ namespace NeuralNetwork
 
         public virtual double output
         {
+            //the output is calculated through the inputs
             get { return Sigmoid.output(weights[0] * inputs[0].output + weights[1] * inputs[1].output + biasWeight); }
             set { }
         }

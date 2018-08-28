@@ -37,7 +37,7 @@ namespace NeuralNetwork
 
         private void button1_Click(object sender, EventArgs e)
         {
-            xornet.train();
+            xornet.trainXOR();
         }
     }
 }
