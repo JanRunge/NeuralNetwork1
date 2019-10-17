@@ -13,14 +13,18 @@ namespace NeuralNetwork
        public double input;
         public override double output
         {
-            //the input is a blank number
+            //the output always equals the input
             get {  return input; }
             set { input = value; }
+        }
+        public InputNeuron(Random r): base(r)
+        {
+
         }
         
         public override void calculateError(double desired_result)
         {
-            
+            throw new Exception("Inputneurons cannot have an Error!");
         }
     }
 }

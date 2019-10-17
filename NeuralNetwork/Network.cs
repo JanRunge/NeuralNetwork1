@@ -9,8 +9,8 @@ namespace NeuralNetwork
     class Network
     {
         public InputNeuron[] InputNeurons;
-        private Neuron[][] hiddenNeurons;
-        public Neuron[] outputNeurons;
+        private HiddenNeuron[][] hiddenNeurons;
+        public OutputNeuron[] outputNeurons;
         public string type;
 
         double[][] inputs =
@@ -27,25 +27,27 @@ namespace NeuralNetwork
 
         public Network(int InputLayerSize, int[] HiddenLayerSizes, int OutputLayerSize )
         {
+            Random r = new Random();
+            //will create a network with InputLayerSize inputneurons, HiddenLayerSizes.count Hiddenlayers (Each with the size of the array at that position), and OutputLayerSize outputneurons
             /*****************************
              InputNeurons
              ****************************/
             InputNeurons = new InputNeuron[InputLayerSize];
             for (int i=0; i < InputLayerSize; i++ )
             {
-                InputNeurons[i] = new InputNeuron();
+                InputNeurons[i] = new InputNeuron(r);
                 InputNeurons[i].name = "inputNeuron " + i;
             }
             /*****************************
              HiddenNeurons
              ****************************/
-            hiddenNeurons = new Neuron[HiddenLayerSizes.Length][];
+            hiddenNeurons = new HiddenNeuron[HiddenLayerSizes.Length][];
             for (int i = 0; i < hiddenNeurons.Length; i++) //for each layer
             {
-                hiddenNeurons[i] = new Neuron[HiddenLayerSizes[i]];//the size of the Layer is given in the input param
+                hiddenNeurons[i] = new HiddenNeuron[HiddenLayerSizes[i]];//the size of the Layer is given in the input param
                 for (int k = 0; k < hiddenNeurons[i].Length; k++)
                 {
-                    hiddenNeurons[i][k] = new HiddenNeuron();
+                    hiddenNeurons[i][k] = new HiddenNeuron(r);
                     hiddenNeurons[i][k].name = "HiddenNeuron " + k+"|"+i;
 
                     if (i == 0)
@@ -69,10 +71,10 @@ namespace NeuralNetwork
             /*****************************
              OutputNeurons
              ****************************/
-            outputNeurons = new Neuron[OutputLayerSize];
+            outputNeurons = new OutputNeuron[OutputLayerSize];
             for (int i = 0; i < outputNeurons.Length; i++)
             {
-                outputNeurons[i] = new OutputNeuron();
+                outputNeurons[i] = new OutputNeuron(r);
                 outputNeurons[i].name = "outputNeuron " + i;
                 foreach (Neuron inputneuron in hiddenNeurons[hiddenNeurons.Length-1])
                 {
@@ -85,14 +87,32 @@ namespace NeuralNetwork
         {
             return new Network(2, new int[1] { 2 }, 1);
         }
-        
-        public void train()
+        public void reInitialize()//randomize weights
+        {
+
+            foreach (Neuron n in outputNeurons)
+            {
+                n.randomizeWeights();
+            }
+            foreach (Neuron[] Layer in hiddenNeurons)
+            {
+                foreach (Neuron n in Layer)
+                {
+                    n.randomizeWeights();
+                }
+            }
+
+        }
+
+
+        public void train(double faultTolerance, int maxEpochs)
         {
             int epoch = 0;
-
-            while (epoch < 2000)
+            double error=1;//the current maximum error
+            while (error>faultTolerance && epoch<= maxEpochs)
             {
                 epoch++;
+                error = 0;
                 for (int i = 0; i < inputs.Length ; i++)  //Loop over every input dataset
                 {
 
@@ -100,13 +120,14 @@ namespace NeuralNetwork
                     {
                         this.InputNeurons[k].output = inputs[i][ k]; 
                     }
-
-                    // 2) back propagation (adjusts weights)
-
-                    // adjusts the weight of the output neuron, based on its error
                     foreach (Neuron n in outputNeurons) {
                         n.calculateError(results[i]);
                         n.adjustWeights();
+                        if (Math.Abs(n.error)> error)
+                        {
+                            error = Math.Abs(n.error);
+                            
+                        }
                     }
                     foreach (Neuron[] Layer in hiddenNeurons)
                     {
@@ -119,57 +140,16 @@ namespace NeuralNetwork
 
                 }
             }
-
-        }
-       /*
-        public void trainXOR()
-        {
-            Console.WriteLine("starting training");
-            // the input values
-            double[,] inputs =
-             {
-                 { 0, 0},
-                 { 0, 1},
-                 { 1, 0},
-                 { 1, 1}
-             };
-
-            // desired results
-            double[] results = { 0, 1, 1, 0 };
-
-            int epoch = 0;
-
-            while (epoch < 2000)
+            if (epoch >= maxEpochs)
             {
-                epoch++;
-                for (int i = 0; i < 4; i++)  // very important, do NOT train for only one example
-                {
-                    //set Inputvars
-                    InputNeurons[0].output = inputs[i, 0];
-                    InputNeurons[1].output = inputs[i, 1];
-
-                    //Console.WriteLine("{0} xor {1} = {2}", inputs[i, 0], inputs[i, 1], outputNeurons[0].output);
-
-                    // 2) back propagation (adjusts weights)
-
-                    // adjusts the weight of the output neuron, based on its error
-                    outputNeurons[0].error = Sigmoid.derivative(outputNeurons[0].output) * (results[i] - outputNeurons[0].output);
-                    
-
-                    // then adjusts the hidden neurons' weights, based on their errors
-                    hiddenNeurons[0][0].error = Sigmoid.derivative(hiddenNeurons[0][0].output) * outputNeurons[0].error * outputNeurons[0].weights[0];
-                    hiddenNeurons[0][1].error = Sigmoid.derivative(hiddenNeurons[0][1].output) * outputNeurons[0].error * outputNeurons[0].weights[1];
-
-                    hiddenNeurons[0][0].adjustWeights();
-                    hiddenNeurons[0][1].adjustWeights();
-                    outputNeurons[0].adjustWeights();
-
-
-                }
+                Console.WriteLine("Unsuccessfull training: " + error);
             }
-            Console.WriteLine("Training finished");
+            else
+            {
+                Console.WriteLine("Successfull training: "+ error);
+            }
+           
 
         }
-         */
     }
 }

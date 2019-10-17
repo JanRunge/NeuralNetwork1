@@ -8,7 +8,7 @@ namespace NeuralNetwork
 {
     class HiddenNeuron :Neuron
     {
-        public HiddenNeuron() : base()
+        public HiddenNeuron(Random r) : base(r)
         {
 
         }

@@ -8,7 +8,7 @@ namespace NeuralNetwork
 {
     class OutputNeuron : Neuron
     {
-        public OutputNeuron() : base()
+        public OutputNeuron(Random r) : base(r)//call the base constructor
         {
 
         }

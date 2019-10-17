@@ -12,10 +12,13 @@ namespace NeuralNetwork
         public List<Axon> outputs = new List<Axon>();
         public double error;
         private double biasWeight;
-        private Random r = new Random();
+        private Random r;
         public String name;
 
-
+        public Neuron(Random r)
+        {
+            this.r = r;
+        }
         public virtual double output
         {
             //the output is calculated through the inputs

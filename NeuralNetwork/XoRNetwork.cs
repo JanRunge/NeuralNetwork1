@@ -8,7 +8,7 @@ namespace NeuralNetwork
 {
     class XoRNetwork : Network
     {
-        public XoRNetwork() : base(2, new int[1] { 2 }, 1)
+        public XoRNetwork() : base(2, new int[1] { 2 }, 1)// create a network of the size 1-2-1
         {
             
         }
