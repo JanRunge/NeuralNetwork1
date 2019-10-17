@@ -16,8 +16,7 @@ namespace NeuralNetwork
         public Form1()
         {
             InitializeComponent();
-            xornet = new Network();
-            xornet.MakeXOR();
+            xornet = Network.CreateXOR();
         }
 
         private void ButtonXOR_Click(object sender, EventArgs e)

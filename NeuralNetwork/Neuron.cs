@@ -8,8 +8,8 @@ namespace NeuralNetwork
 {
     class Neuron
     {
-        public Neuron[] inputs = new Neuron[2];
-        public double[] weights = new double[2];
+        public List<Neuron> inputs = new List<Neuron>();
+        public List<double> weights = new List<double>();
         public double error;
         private double biasWeight;
         private Random r = new Random();
@@ -19,21 +19,41 @@ namespace NeuralNetwork
         public virtual double output
         {
             //the output is calculated through the inputs
-            get { return Sigmoid.output(weights[0] * inputs[0].output + weights[1] * inputs[1].output + biasWeight); }
+            
+            get {
+                double sum = 0;
+                for (int i = 0; i < inputs.Count; i++)
+                {
+                    sum+= (weights[i] * inputs[i].output);
+                }
+                return Sigmoid.output(sum + biasWeight);
+            }
             set { }
         }
-
+        public void addInput(Neuron n)
+        {
+            inputs.Add(n);
+            weights.Add(-1);
+        }
         public void randomizeWeights()
         {
-            weights[0] = r.NextDouble();
-            weights[1] = r.NextDouble();
+            //@TODO make this dynamic
+            for (int i=0; i< inputs.Count; i++)
+            {
+                weights[i] = r.NextDouble();
+
+            }
             biasWeight = r.NextDouble();
+            
         }
 
         public void adjustWeights()
         {
-            weights[0] += error * inputs[0].output;
-            weights[1] += error * inputs[1].output;
+            for (int i = 0; i < inputs.Count; i++)
+            {
+                weights[i] += error * inputs[i].output;
+
+            }
             biasWeight += error;
         }
     }

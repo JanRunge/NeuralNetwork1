@@ -9,59 +9,69 @@ namespace NeuralNetwork
     class Network
     {
         public InputNeuron[] InputNeurons;
-        private Neuron[] hiddenNeurons;
+        private Neuron[][] hiddenNeurons;
         public Neuron[] outputNeurons;
         public string type;
-        public Network()
+        public Network(int InputLayerSize, int[] HiddenLayerSizes, int OutputLayerSize )
         {
-
-        }
-        public void MakeXOR()
-        {
-            //Create all neurons that are needed, so that the network can learn how XOR works
-            /*
-             Needs 2 input neurons
-                   2 hidden neurons
-                   1 output neuron
-             */
-            int i;
             /*****************************
              InputNeurons
              ****************************/
-            InputNeurons = new InputNeuron[] { new InputNeuron(), new InputNeuron() };
-            i = 0;
-            foreach (InputNeuron curNeur in InputNeurons)
+            InputNeurons = new InputNeuron[InputLayerSize];
+            for (int i=0; i < InputLayerSize; i++ )
             {
-                i++;
-                curNeur.name = "inputNeuron " + i;
-            }
-            /*****************************
-            HiddenNeurons
-            ****************************/
-            hiddenNeurons = new Neuron[] { new Neuron(), new Neuron() };
-            i = 0;
-            foreach (Neuron curNeur in hiddenNeurons)
-            {
-                i++;
-                curNeur.name = "hiddenNeuron " + i;
-                curNeur.randomizeWeights();
-                curNeur.inputs = new Neuron[] { InputNeurons[0], InputNeurons[1] };
+                InputNeurons[i] = new InputNeuron();
+                InputNeurons[i].name = "inputNeuron " + i;
             }
 
-            /*****************************
-            OutputNeurons
-            ****************************/
-            outputNeurons = new Neuron[] { new Neuron() };
-            i = 0;
-            foreach (Neuron curNeur in outputNeurons)
+            hiddenNeurons = new Neuron[HiddenLayerSizes.Length][];
+            for (int i = 0; i < hiddenNeurons.Length; i++) //for each layer
             {
-                i++;
-                curNeur.name = "OutputNeuron " + i;
-                curNeur.randomizeWeights();
-                curNeur.inputs = new Neuron[] { hiddenNeurons[0], hiddenNeurons[1] };
+                hiddenNeurons[i] = new Neuron[HiddenLayerSizes[i]];//the size of the Layer is given in the input param
+                for (int k = 0; k < hiddenNeurons[i].Length; k++)
+                {
+                    hiddenNeurons[i][k] = new Neuron();
+                    hiddenNeurons[i][k].name = "HiddenNeuron " + k+"|"+i;
 
+                    if (i == 0)
+                    {
+                        //the inputs come from the inputlayer
+                        foreach (InputNeuron inputneuron in InputNeurons)
+                        {
+                            hiddenNeurons[i][k].addInput(inputneuron);
+                        }
+                    }
+                    else {
+                        foreach (Neuron inputneuron in hiddenNeurons[i - 1])
+                        {
+                            hiddenNeurons[i][k].addInput(inputneuron);
+                        }
+                    }
+                    hiddenNeurons[i][k].randomizeWeights();
+
+                }
             }
 
+            outputNeurons = new Neuron[OutputLayerSize];
+            for (int i = 0; i < outputNeurons.Length; i++)
+            {
+                outputNeurons[i] = new Neuron();
+                outputNeurons[i].name = "outputNeuron " + i;
+                foreach (Neuron inputneuron in hiddenNeurons[hiddenNeurons.Length-1])
+                {
+                    outputNeurons[i].addInput(inputneuron);
+                }
+                outputNeurons[i].randomizeWeights();
+            }
+
+
+
+
+
+        }
+        public static Network CreateXOR()
+        {
+            return new Network(2, new int[1] { 2 }, 1);
         }
         public void trainXOR()
         {
@@ -98,11 +108,11 @@ namespace NeuralNetwork
                     outputNeurons[0].adjustWeights();
 
                     // then adjusts the hidden neurons' weights, based on their errors
-                    hiddenNeurons[0].error = Sigmoid.derivative(hiddenNeurons[0].output) * outputNeurons[0].error * outputNeurons[0].weights[0];
-                    hiddenNeurons[1].error = Sigmoid.derivative(hiddenNeurons[1].output) * outputNeurons[0].error * outputNeurons[0].weights[1];
+                    hiddenNeurons[0][0].error = Sigmoid.derivative(hiddenNeurons[0][0].output) * outputNeurons[0].error * outputNeurons[0].weights[0];
+                    hiddenNeurons[0][1].error = Sigmoid.derivative(hiddenNeurons[0][1].output) * outputNeurons[0].error * outputNeurons[0].weights[1];
 
-                    hiddenNeurons[0].adjustWeights();
-                    hiddenNeurons[1].adjustWeights();
+                    hiddenNeurons[0][0].adjustWeights();
+                    hiddenNeurons[0][1].adjustWeights();
 
 
                 }
