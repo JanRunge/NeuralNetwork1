@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace NeuralNetwork
 {
@@ -103,7 +105,36 @@ namespace NeuralNetwork
             }
 
         }
+        public void Save(String path)
+        {
+            using (FileStream fs = File.Create(@path))
+            {
+                byte[] info = new UTF8Encoding(true).GetBytes("This is some text in the file.");
+                // Add some information to the file.
+                fs.Write(info, 0, info.Length);
+            }
 
+            
+            foreach (Neuron n in InputNeurons)
+            {
+                XAttribute xType = new XAttribute("Type", "input");
+                XAttribute xName = new XAttribute("Name", n.name);
+                XElement xn = new XElement("Neuron", xType, xName);
+
+            }
+            foreach (Neuron n in outputNeurons)
+            {
+                n.randomizeWeights();
+            }
+            foreach (Neuron[] Layer in hiddenNeurons)
+            {
+                foreach (Neuron n in Layer)
+                {
+                    n.randomizeWeights();
+                }
+            }
+
+        }
 
         public void train(double faultTolerance, int maxEpochs)
         {
@@ -128,7 +159,7 @@ namespace NeuralNetwork
                         {
                             if (Math.Abs(n.error) - error <0.00001)
                             {
-                                Console.WriteLine("The Training has reached a minimum (correcting the error by "+( Math.Abs(n.error) - error) + "), but is still " + error + " away from the correct Result. This might indicate, that the Network ran into a local minimum");
+                                Console.WriteLine("The Training has reached a minimum (correcting the error by "+( Math.Abs(n.error) - error) + "), but is still " + error + " away from the correct Result. This might indicate that the Network ran into a local minimum");
                                 abortflag = true;
                             }
                             error = Math.Abs(n.error);
