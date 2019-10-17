@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace NeuralNetwork
 {
-    class Neuron
+    abstract class Neuron
     {
-        public List<Neuron> inputs = new List<Neuron>();
-        public List<double> weights = new List<double>();
+        public List<Axon> inputs = new List<Axon>();
+        public List<Axon> outputs = new List<Axon>();
         public double error;
         private double biasWeight;
         private Random r = new Random();
@@ -24,23 +24,24 @@ namespace NeuralNetwork
                 double sum = 0;
                 for (int i = 0; i < inputs.Count; i++)
                 {
-                    sum+= (weights[i] * inputs[i].output);
+                    sum+= (inputs[i].weight * inputs[i].input.output);
                 }
                 return Sigmoid.output(sum + biasWeight);
             }
             set { }
         }
+        public abstract void calculateError(double desired_result);
         public void addInput(Neuron n)
         {
-            inputs.Add(n);
-            weights.Add(-1);
+            new Axon(n, this);
+
         }
         public void randomizeWeights()
         {
             //@TODO make this dynamic
             for (int i=0; i< inputs.Count; i++)
             {
-                weights[i] = r.NextDouble();
+                inputs[i].weight = r.NextDouble();
 
             }
             biasWeight = r.NextDouble();
@@ -51,7 +52,7 @@ namespace NeuralNetwork
         {
             for (int i = 0; i < inputs.Count; i++)
             {
-                weights[i] += error * inputs[i].output;
+                inputs[i].weight += error * inputs[i].input.output;
 
             }
             biasWeight += error;

@@ -17,6 +17,10 @@ namespace NeuralNetwork
             get {  return input; }
             set { input = value; }
         }
-
+        
+        public override void calculateError(double desired_result)
+        {
+            
+        }
     }
 }
