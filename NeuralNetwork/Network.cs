@@ -109,7 +109,8 @@ namespace NeuralNetwork
         {
             int epoch = 0;
             double error=1;//the current maximum error
-            while (error>faultTolerance && epoch<= maxEpochs)
+            bool abortflag=false;
+            while (error > faultTolerance && epoch <= maxEpochs && !abortflag)
             {
                 epoch++;
                 error = 0;
@@ -125,6 +126,11 @@ namespace NeuralNetwork
                         n.adjustWeights();
                         if (Math.Abs(n.error)> error)
                         {
+                            if (Math.Abs(n.error) - error <0.00001)
+                            {
+                                Console.WriteLine("The Training has reached a minimum (correcting the error by "+( Math.Abs(n.error) - error) + "), but is still " + error + " away from the correct Result. This might indicate, that the Network ran into a local minimum");
+                                abortflag = true;
+                            }
                             error = Math.Abs(n.error);
                             
                         }
@@ -140,9 +146,9 @@ namespace NeuralNetwork
 
                 }
             }
-            if (epoch >= maxEpochs)
+            if (epoch >= maxEpochs || abortflag)
             {
-                Console.WriteLine("Unsuccessfull training: " + error);
+                Console.WriteLine("Unsuccessfull training: " + error); //the network might have run into a local minimum
             }
             else
             {
