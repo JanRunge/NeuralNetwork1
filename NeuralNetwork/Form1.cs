@@ -36,12 +36,17 @@ namespace NeuralNetwork
 
         private void button1_Click(object sender, EventArgs e)
         {
-            xornet.train(0.1, 20000);
+            xornet.train(0.01, 20000);
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
             xornet.reInitialize();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            xornet.Save("");
         }
     }
 }

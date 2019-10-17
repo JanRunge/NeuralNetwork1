@@ -107,32 +107,49 @@ namespace NeuralNetwork
         }
         public void Save(String path)
         {
-            using (FileStream fs = File.Create(@path))
-            {
-                byte[] info = new UTF8Encoding(true).GetBytes("This is some text in the file.");
-                // Add some information to the file.
-                fs.Write(info, 0, info.Length);
-            }
+            XElement xDocumentHead = new XElement("Network");
 
-            
+            XElement xInputLayer = new XElement("Input");
+            XElement xHiddenLayers = new XElement("Hidden");
+            XElement xOuputLayer = new XElement("Output");
+            XElement xAxons = new XElement("Axons");
+            xDocumentHead.Add(xInputLayer);
+            xDocumentHead.Add(xHiddenLayers);
+            xDocumentHead.Add(xOuputLayer);
+            xDocumentHead.Add(xAxons);
+
             foreach (Neuron n in InputNeurons)
             {
                 XAttribute xType = new XAttribute("Type", "input");
                 XAttribute xName = new XAttribute("Name", n.name);
                 XElement xn = new XElement("Neuron", xType, xName);
-
-            }
-            foreach (Neuron n in outputNeurons)
-            {
-                n.randomizeWeights();
+                xInputLayer.Add(xn);
             }
             foreach (Neuron[] Layer in hiddenNeurons)
             {
+                XElement xHiddenLayer = new XElement("Layer");
+                xHiddenLayers.Add(xHiddenLayer);
                 foreach (Neuron n in Layer)
                 {
-                    n.randomizeWeights();
+                    XAttribute xType = new XAttribute("Type", "hidden");
+                    XAttribute xName = new XAttribute("Name", n.name);
+                    XElement xn = new XElement("Neuron", xType, xName);
+
+
+                    xHiddenLayer.Add(xn);
                 }
             }
+
+            foreach (Neuron n in outputNeurons)
+            {
+                XAttribute xType = new XAttribute("Type", "output");
+                XAttribute xName = new XAttribute("Name", n.name);
+                XElement xn = new XElement("Neuron", xType, xName);
+                xOuputLayer.Add(xn);
+            }
+            xDocumentHead.Save("Root.xml");
+
+
 
         }
 
@@ -183,7 +200,7 @@ namespace NeuralNetwork
             }
             else
             {
-                Console.WriteLine("Successfull training: "+ error);
+                Console.WriteLine("Successfull training after "+epoch+" epochs: "+ error);
             }
            
 
