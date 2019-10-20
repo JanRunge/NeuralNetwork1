@@ -14,7 +14,8 @@ namespace NeuralNetwork
         }
         public override void calculateError(double desired_result)
         {
-            this.error = Sigmoid.derivative(this.output) * (desired_result - this.output);
+            this.error = this.output * (1 - this.output) * (this.output - desired_result);//backpropagated error
+            
         }
     }
 }

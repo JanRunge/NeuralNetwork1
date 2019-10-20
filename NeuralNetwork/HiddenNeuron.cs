@@ -15,7 +15,12 @@ namespace NeuralNetwork
         //@TODO if there is more than one output, we need to calc differently
         public override void calculateError(double desired_result)
         {
-            error= Sigmoid.derivative(this.output) * this.outputs[0].output.error * this.outputs[0].weight;
+            double sum = 0;
+            foreach (Axon a in this.outputs)
+            {
+                sum += a.output.error * (a.weight);
+            }
+            this.error = sum * (this.output * (1 - this.output));
         }
     }
 }

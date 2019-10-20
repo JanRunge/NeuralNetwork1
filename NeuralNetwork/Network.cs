@@ -171,7 +171,6 @@ namespace NeuralNetwork
                     }
                     foreach (Neuron n in outputNeurons) {
                         n.calculateError(results[i]);
-                        n.adjustWeights();
                         if (Math.Abs(n.error)> error)
                         {
                             if (Math.Abs(n.error) - error <0.00001)
@@ -183,18 +182,36 @@ namespace NeuralNetwork
                             
                         }
                     }
+                    for(int l=0; l < hiddenNeurons.Count(); l++)
+                    {
+                        Neuron[] layer = hiddenNeurons[hiddenNeurons.Count()-1 - l];
+                        foreach (Neuron n in layer)
+                        {
+                            n.calculateError(results[i]);
+                        }
+                    }
+
+
+                    //adjust weights now
+
                     foreach (Neuron[] Layer in hiddenNeurons)
                     {
                         foreach (Neuron n in Layer)
                         {
-                            n.calculateError(results[i]);
                             n.adjustWeights();
                         }
                     }
 
+
+                    foreach (Neuron n in outputNeurons)
+                    {
+                        n.adjustWeights();
+                    }
+
                 }
             }
-            if (epoch >= maxEpochs || abortflag)
+            
+                if (epoch >= maxEpochs || abortflag)
             {
                 Console.WriteLine("Unsuccessfull training: " + error); //the network might have run into a local minimum
             }

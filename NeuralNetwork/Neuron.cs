@@ -11,7 +11,7 @@ namespace NeuralNetwork
         public List<Axon> inputs = new List<Axon>();
         public List<Axon> outputs = new List<Axon>();
         public double error;
-        private double biasWeight;
+        protected double biasWeight;
         private Random r;
         public String name;
 
@@ -27,7 +27,7 @@ namespace NeuralNetwork
                 double sum = 0;
                 for (int i = 0; i < inputs.Count; i++)
                 {
-                    sum+= (inputs[i].weight * inputs[i].input.output);
+                    sum+= (inputs[i].weight * inputs[i].input.output );
                 }
                 return Sigmoid.output(sum + biasWeight);
             }
@@ -51,14 +51,14 @@ namespace NeuralNetwork
             
         }
 
-        public void adjustWeights()
+        public virtual void adjustWeights()
         {
             for (int i = 0; i < inputs.Count; i++)
             {
-                inputs[i].weight += error * inputs[i].input.output;
+                inputs[i].weight += 0.5*(error * inputs[i].input.output);
 
             }
-            biasWeight += error;
+            biasWeight += 0.5 * error;
         }
     }
 }
