@@ -15,6 +15,7 @@ namespace NeuralNetwork
         public OutputNeuron[] outputNeurons;
         public string type;
 
+        public TrainingSet TrainingSet;
         double[][] inputs =
              new double[4][]{
                  new double[2]{ 0, 0},
@@ -85,10 +86,7 @@ namespace NeuralNetwork
                 outputNeurons[i].randomizeWeights();
             }
         }
-        public static Network CreateXOR()
-        {
-            return new Network(2, new int[1] { 2 }, 1);
-        }
+        
         public void reInitialize()//randomize weights
         {
 
@@ -167,24 +165,27 @@ namespace NeuralNetwork
 
                     for (int k = 0; k < this.InputNeurons.Length; k++)  // fill the input-neurons
                     {
-                        this.InputNeurons[k].output = inputs[i][ k]; 
+                        this.InputNeurons[k].output = this.TrainingSet.inputs[i][ k]; 
                     }
-                    foreach (Neuron n in outputNeurons) {
-                        n.calculateError(results[i]);
-                        if (Math.Abs(n.error)> error)
+                    for (int k = 0; k < this.outputNeurons.Length; k++)  // fill the input-neurons
+                    {
+                        Neuron n = outputNeurons[k];
+                        n.calculateError(this.TrainingSet.results[i][k]);
+                        //exit when finding local minimum
+                        if (Math.Abs(n.error) > error)
                         {
-                            if (Math.Abs(n.error) - error <0.00001)
+                            if (Math.Abs(n.error) - error < 0.00001)
                             {
-                                Console.WriteLine("The Training has reached a minimum (correcting the error by "+( Math.Abs(n.error) - error) + "), but is still " + error + " away from the correct Result. This might indicate that the Network ran into a local minimum");
+                                Console.WriteLine("The Training has reached a minimum (correcting the error by " + (Math.Abs(n.error) - error) + "), but is still " + error + " away from the correct Result. This might indicate that the Network ran into a local minimum");
                                 abortflag = true;
                             }
                             error = Math.Abs(n.error);
-                            
+
                         }
                     }
                     for(int l=0; l < hiddenNeurons.Count(); l++)
                     {
-                        Neuron[] layer = hiddenNeurons[hiddenNeurons.Count()-1 - l];
+                        Neuron[] layer = hiddenNeurons[hiddenNeurons.Count()-1 - l];//calculate the error of the output-nearest-layers first, because each layer depends on the next for its calc
                         foreach (Neuron n in layer)
                         {
                             n.calculateError(results[i]);
@@ -201,14 +202,12 @@ namespace NeuralNetwork
                             n.adjustWeights();
                         }
                     }
-
-
                     foreach (Neuron n in outputNeurons)
                     {
                         n.adjustWeights();
                     }
-
                 }
+
             }
             
                 if (epoch >= maxEpochs || abortflag)
