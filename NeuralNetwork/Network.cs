@@ -15,21 +15,20 @@ namespace NeuralNetwork
         public OutputNeuron[] outputNeurons;
         public string type;
 
-        double[][] inputs =
-             new double[4][]{
-                 new double[2]{ 0, 0},
-                 new double[2]{ 0, 1},
-                 new double[2]{ 1, 0},
-                 new double[2]{ 1, 1}
-             };
-
-        // desired results
-        double[] results = { 0, 1, 1, 1 };
-
-
+        public TrainingSet trainingsset;
+        private void validateTraingsset()
+        {
+            if (this.trainingsset == null)
+            {
+                throw new Exception("No Traingsset Provided");
+            }
+            if (this.trainingsset.inputs.Length != this.trainingsset.results.Length)
+            {
+                throw new Exception("Length of inputs and results in trainingsset dont match");
+            }
+        }
         public Network(int InputLayerSize, int[] HiddenLayerSizes, int OutputLayerSize )
         {
-            startweights = new double[HiddenLayerSizes.Length+1][];
             Random r = new Random();
             //will create a network with InputLayerSize inputneurons, HiddenLayerSizes.count Hiddenlayers (Each with the size of the array at that position), and OutputLayerSize outputneurons
             /*****************************
@@ -87,10 +86,7 @@ namespace NeuralNetwork
             }
             this.RandomizeAllWeights();
         }
-        public static Network CreateXOR()
-        {
-            return new Network(2, new int[1] { 2 }, 1);
-        }
+        
         public void RandomizeAllWeights()//randomize weights
         {
             foreach (Neuron n in outputNeurons)
@@ -169,6 +165,7 @@ namespace NeuralNetwork
         }
         public void train(double faultTolerance, int maxEpochs)
         {
+            validateTraingsset();
             int epoch = 0;
             double highestError = 1;//the current maximum error
             double ErrorSumPerSet=0;
@@ -180,22 +177,23 @@ namespace NeuralNetwork
                 
                 if(lastErrorSumPerSet< ErrorSumPerSet)
                 {
-                    Console.WriteLine("The error is increasing");
-                    abortflag = true;
+                    Console.WriteLine("The error is increasing "+ ErrorSumPerSet+" > "+ lastErrorSumPerSet+" "+epoch );
+                    //abortflag = true;
                 }
-                for (int i = 0; i < inputs.Length; i++)  //Loop over every input dataset
+                for (int i = 0; i < this.trainingsset.inputs.Length; i++)  //Loop over every input dataset
                 {
                     highestError = 0;
                     lastErrorSumPerSet = ErrorSumPerSet;
                     ErrorSumPerSet = 0;
                     for (int k = 0; k < this.InputNeurons.Length; k++)  // fill the input-neurons
                     {
-                        this.InputNeurons[k].output = inputs[i][k];
+                        this.InputNeurons[k].output = this.trainingsset.inputs[i][k];
                     }
                     this.fire();
+                    int outcounter = 0;
                     foreach (OutputNeuron n in outputNeurons)
                     {
-                        n.calculateError(results[i]);
+                        n.calculateError(this.trainingsset.results[i][outcounter]);
                         ErrorSumPerSet += Math.Abs(n.error);
                         if (Math.Abs(n.error)> highestError)
                         {   
@@ -209,13 +207,14 @@ namespace NeuralNetwork
                             highestError = Math.Abs(n.error);
                             
                         }
+                        outcounter++;
                     }
                     for(int l=0; l < hiddenNeurons.Count(); l++)
                     {
                         Neuron[] layer = hiddenNeurons[hiddenNeurons.Count()-1 - l];
                         foreach (Neuron n in layer)
                         {
-                            n.calculateError(results[i]);
+                            n.calculateError(-1);
                         }
                     }
 
