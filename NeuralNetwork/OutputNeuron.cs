@@ -22,6 +22,7 @@ namespace NeuralNetwork
             {
                 a.weightdelta = this.gamma * a.input.output;
             }
+            this.biasdelta = this.gamma * biasweight;
             
         }
     }

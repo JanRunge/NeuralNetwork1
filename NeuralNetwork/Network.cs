@@ -24,11 +24,12 @@ namespace NeuralNetwork
              };
 
         // desired results
-        double[] results = { 0, 1, 1, 0 };
+        double[] results = { 0, 1, 1, 1 };
 
 
         public Network(int InputLayerSize, int[] HiddenLayerSizes, int OutputLayerSize )
         {
+            startweights = new double[HiddenLayerSizes.Length+1][];
             Random r = new Random();
             //will create a network with InputLayerSize inputneurons, HiddenLayerSizes.count Hiddenlayers (Each with the size of the array at that position), and OutputLayerSize outputneurons
             /*****************************
@@ -39,6 +40,7 @@ namespace NeuralNetwork
             {
                 InputNeurons[i] = new InputNeuron(r);
                 InputNeurons[i].name = "inputNeuron " + i;
+                
             }
             /*****************************
              HiddenNeurons
@@ -51,6 +53,7 @@ namespace NeuralNetwork
                 {
                     hiddenNeurons[i][k] = new HiddenNeuron(r);
                     hiddenNeurons[i][k].name = "HiddenNeuron " + k+"|"+i;
+                    
 
                     if (i == 0)
                     {
@@ -66,7 +69,6 @@ namespace NeuralNetwork
                             hiddenNeurons[i][k].addInput(inputneuron);
                         }
                     }
-                    hiddenNeurons[i][k].randomizeWeights();
 
                 }
             }
@@ -82,16 +84,15 @@ namespace NeuralNetwork
                 {
                     outputNeurons[i].addInput(inputneuron);
                 }
-                outputNeurons[i].randomizeWeights();
             }
+            this.RandomizeAllWeights();
         }
         public static Network CreateXOR()
         {
             return new Network(2, new int[1] { 2 }, 1);
         }
-        public void reInitialize()//randomize weights
+        public void RandomizeAllWeights()//randomize weights
         {
-
             foreach (Neuron n in outputNeurons)
             {
                 n.randomizeWeights();
@@ -170,15 +171,23 @@ namespace NeuralNetwork
         {
             int epoch = 0;
             double highestError = 1;//the current maximum error
+            double ErrorSumPerSet=0;
+            double lastErrorSumPerSet = 0;
             bool abortflag = false;
             while (highestError > faultTolerance && epoch <= maxEpochs && !abortflag)
             {
                 epoch++;
                 
-
+                if(lastErrorSumPerSet< ErrorSumPerSet)
+                {
+                    Console.WriteLine("The error is increasing");
+                    abortflag = true;
+                }
                 for (int i = 0; i < inputs.Length; i++)  //Loop over every input dataset
                 {
                     highestError = 0;
+                    lastErrorSumPerSet = ErrorSumPerSet;
+                    ErrorSumPerSet = 0;
                     for (int k = 0; k < this.InputNeurons.Length; k++)  // fill the input-neurons
                     {
                         this.InputNeurons[k].output = inputs[i][k];
@@ -187,7 +196,7 @@ namespace NeuralNetwork
                     foreach (OutputNeuron n in outputNeurons)
                     {
                         n.calculateError(results[i]);
-                        
+                        ErrorSumPerSet += Math.Abs(n.error);
                         if (Math.Abs(n.error)> highestError)
                         {   
                             
@@ -229,16 +238,13 @@ namespace NeuralNetwork
 
                 }
             }
-            
-            if (epoch >= maxEpochs)
-            {
-                Console.WriteLine("Training finished all Epochs ("+epoch+"). Remaining Error:" + highestError); //the network might have run into a local minimum
-            }
             if (abortflag)
             {
-                Console.WriteLine("Training was aborted. Current Error: " + highestError); //the network might have run into a local minimum
-            }
-            else
+                Console.WriteLine("Training was aborted. Current Error: " + highestError);
+            }else if (epoch >= maxEpochs)
+            {
+                Console.WriteLine("Training finished all Epochs ("+epoch+"). Remaining Error:" + highestError);
+            }else
             {
                 Console.WriteLine("Successfull training after "+epoch+" epochs: "+ highestError);
             }

@@ -15,6 +15,12 @@ namespace NeuralNetwork
         //@TODO if there is more than one output, we need to calc differently
         public override void calculateError(double desired_result)
         {
+            double outputGammas = 1;
+            foreach (Axon a in this.outputs)
+            {
+                outputGammas *= a.output.gamma;
+            }
+
             gamma = 0;
             foreach (Axon a in this.outputs)
             {
@@ -26,6 +32,7 @@ namespace NeuralNetwork
             {
                 a.weightdelta = this.gamma * a.input.output;
             }
+            this.biasdelta = outputGammas * biasweight;
         }
     }
 }

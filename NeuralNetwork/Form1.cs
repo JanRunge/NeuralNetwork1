@@ -41,7 +41,7 @@ namespace NeuralNetwork
 
         private void button2_Click(object sender, EventArgs e)
         {
-            xornet.reInitialize();
+            xornet.RandomizeAllWeights();
         }
 
         private void button3_Click(object sender, EventArgs e)

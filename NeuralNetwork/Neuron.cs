@@ -13,9 +13,11 @@ namespace NeuralNetwork
 
         private double pOutput;
         public double gamma;
-        private double biasweight;
+        protected double biasweight;
+        protected double biasdelta;
         
         private Random r;
+        private Network myNetwork;
         public String name;
 
         public Neuron(Random r)
@@ -39,7 +41,7 @@ namespace NeuralNetwork
             {
                 sum += (inputs[i].weight * inputs[i].input.output);
             }
-            pOutput = Math.Tanh(sum);
+            pOutput = Math.Tanh(sum+biasweight);
         }
         public void addInput(Neuron n)
         {
@@ -54,6 +56,7 @@ namespace NeuralNetwork
                 inputs[i].weight = r.NextDouble()-0.5;
 
             }
+            biasweight = r.NextDouble() - 0.5;
         }
 
         public virtual void adjustWeights()
@@ -63,6 +66,9 @@ namespace NeuralNetwork
                 a.weight -= 0.5*(a.weightdelta);
                 a.weightdelta = 0;
             }
+            biasweight -= 0.5 *(this.biasdelta);
+            biasdelta = 0;
+
         }
         //derivate TanH
         public double TanHDer(double value)
