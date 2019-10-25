@@ -11,6 +11,7 @@ namespace NeuralNetwork
         public Neuron input;
         public double weight;
         public Neuron output;
+        public double weightdelta;
 
         public Axon(Neuron input, Neuron output)
         {

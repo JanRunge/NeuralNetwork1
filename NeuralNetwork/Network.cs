@@ -15,7 +15,6 @@ namespace NeuralNetwork
         public OutputNeuron[] outputNeurons;
         public string type;
 
-        public TrainingSet TrainingSet;
         double[][] inputs =
              new double[4][]{
                  new double[2]{ 0, 0},
@@ -86,7 +85,10 @@ namespace NeuralNetwork
                 outputNeurons[i].randomizeWeights();
             }
         }
-        
+        public static Network CreateXOR()
+        {
+            return new Network(2, new int[1] { 2 }, 1);
+        }
         public void reInitialize()//randomize weights
         {
 
@@ -150,42 +152,58 @@ namespace NeuralNetwork
 
 
         }
-
+        public void fire()
+        {
+            foreach (Neuron[] Layer in this.hiddenNeurons)
+            {
+                foreach (Neuron n in Layer)
+                {
+                    n.fire();
+                }
+            }
+            foreach (Neuron n in this.outputNeurons)
+            {
+                n.fire();
+            }
+        }
         public void train(double faultTolerance, int maxEpochs)
         {
             int epoch = 0;
-            double error=1;//the current maximum error
-            bool abortflag=false;
-            while (error > faultTolerance && epoch <= maxEpochs && !abortflag)
+            double highestError = 1;//the current maximum error
+            bool abortflag = false;
+            while (highestError > faultTolerance && epoch <= maxEpochs && !abortflag)
             {
                 epoch++;
-                error = 0;
-                for (int i = 0; i < inputs.Length ; i++)  //Loop over every input dataset
-                {
+                
 
+                for (int i = 0; i < inputs.Length; i++)  //Loop over every input dataset
+                {
+                    highestError = 0;
                     for (int k = 0; k < this.InputNeurons.Length; k++)  // fill the input-neurons
                     {
-                        this.InputNeurons[k].output = this.TrainingSet.inputs[i][ k]; 
+                        this.InputNeurons[k].output = inputs[i][k];
                     }
-                    for (int k = 0; k < this.outputNeurons.Length; k++)  // fill the input-neurons
+                    this.fire();
+                    foreach (OutputNeuron n in outputNeurons)
                     {
-                        Neuron n = outputNeurons[k];
-                        n.calculateError(this.TrainingSet.results[i][k]);
-                        //exit when finding local minimum
-                        if (Math.Abs(n.error) > error)
-                        {
-                            if (Math.Abs(n.error) - error < 0.00001)
+                        n.calculateError(results[i]);
+                        
+                        if (Math.Abs(n.error)> highestError)
+                        {   
+                            
+                            
+                            if (Math.Abs(n.error) - highestError < (faultTolerance / 10))
                             {
-                                Console.WriteLine("The Training has reached a minimum (correcting the error by " + (Math.Abs(n.error) - error) + "), but is still " + error + " away from the correct Result. This might indicate that the Network ran into a local minimum");
+                                Console.WriteLine("The Training has reached a minimum (correcting the error by "+( Math.Abs(n.error) - highestError) + "), but is still " + highestError + " away from the correct Result. This might indicate that the Network ran into a local minimum");
                                 abortflag = true;
                             }
-                            error = Math.Abs(n.error);
-
+                            highestError = Math.Abs(n.error);
+                            
                         }
                     }
                     for(int l=0; l < hiddenNeurons.Count(); l++)
                     {
-                        Neuron[] layer = hiddenNeurons[hiddenNeurons.Count()-1 - l];//calculate the error of the output-nearest-layers first, because each layer depends on the next for its calc
+                        Neuron[] layer = hiddenNeurons[hiddenNeurons.Count()-1 - l];
                         foreach (Neuron n in layer)
                         {
                             n.calculateError(results[i]);
@@ -202,21 +220,23 @@ namespace NeuralNetwork
                             n.adjustWeights();
                         }
                     }
+
+
                     foreach (Neuron n in outputNeurons)
                     {
                         n.adjustWeights();
                     }
-                }
 
+                }
             }
             
                 if (epoch >= maxEpochs || abortflag)
             {
-                Console.WriteLine("Unsuccessfull training: " + error); //the network might have run into a local minimum
+                Console.WriteLine("Unsuccessfull training: " + highestError); //the network might have run into a local minimum
             }
             else
             {
-                Console.WriteLine("Successfull training after "+epoch+" epochs: "+ error);
+                Console.WriteLine("Successfull training after "+epoch+" epochs: "+ highestError);
             }
            
 

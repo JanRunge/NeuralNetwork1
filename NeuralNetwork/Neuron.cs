@@ -10,8 +10,11 @@ namespace NeuralNetwork
     {
         public List<Axon> inputs = new List<Axon>();
         public List<Axon> outputs = new List<Axon>();
-        public double error;
-        protected double biasWeight;
+
+        private double pOutput;
+        public double gamma;
+        private double biasweight;
+        
         private Random r;
         public String name;
 
@@ -24,16 +27,20 @@ namespace NeuralNetwork
             //the output is calculated through the inputs
             
             get {
-                double sum = 0;
-                for (int i = 0; i < inputs.Count; i++)
-                {
-                    sum+= (inputs[i].weight * inputs[i].input.output );
-                }
-                return Sigmoid.output(sum + biasWeight);
+                return pOutput;
             }
             set { }
         }
         public abstract void calculateError(double desired_result);
+        public void fire()
+        {
+            double sum = 0;
+            for (int i = 0; i < inputs.Count; i++)
+            {
+                sum += (inputs[i].weight * inputs[i].input.output);
+            }
+            pOutput = Math.Tanh(sum);
+        }
         public void addInput(Neuron n)
         {
             new Axon(n, this);
@@ -44,21 +51,23 @@ namespace NeuralNetwork
             //@TODO make this dynamic
             for (int i=0; i< inputs.Count; i++)
             {
-                inputs[i].weight = r.NextDouble();
+                inputs[i].weight = r.NextDouble()-0.5;
 
             }
-            biasWeight = r.NextDouble();
-            
         }
 
         public virtual void adjustWeights()
         {
-            for (int i = 0; i < inputs.Count; i++)
+            foreach (Axon a in this.inputs)
             {
-                inputs[i].weight += 0.5*(error * inputs[i].input.output);
-
+                a.weight -= 0.5*(a.weightdelta);
+                a.weightdelta = 0;
             }
-            biasWeight += 0.5 * error;
+        }
+        //derivate TanH
+        public double TanHDer(double value)
+        {
+            return 1 - (value * value);
         }
     }
 }

@@ -15,12 +15,17 @@ namespace NeuralNetwork
         //@TODO if there is more than one output, we need to calc differently
         public override void calculateError(double desired_result)
         {
-            double sum = 0;
+            gamma = 0;
             foreach (Axon a in this.outputs)
             {
-                sum += a.output.error * (a.weight);
+                gamma += a.output.gamma * (a.weight);
             }
-            this.error = sum * (this.output * (1 - this.output));
+            gamma *= TanHDer(this.output);
+
+            foreach (Axon a in this.inputs)
+            {
+                a.weightdelta = this.gamma * a.input.output;
+            }
         }
     }
 }
