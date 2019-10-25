@@ -230,9 +230,13 @@ namespace NeuralNetwork
                 }
             }
             
-                if (epoch >= maxEpochs || abortflag)
+            if (epoch >= maxEpochs)
             {
-                Console.WriteLine("Unsuccessfull training: " + highestError); //the network might have run into a local minimum
+                Console.WriteLine("Training finished all Epochs ("+epoch+"). Remaining Error:" + highestError); //the network might have run into a local minimum
+            }
+            if (abortflag)
+            {
+                Console.WriteLine("Training was aborted. Current Error: " + highestError); //the network might have run into a local minimum
             }
             else
             {
@@ -241,5 +245,6 @@ namespace NeuralNetwork
            
 
         }
+        
     }
 }
