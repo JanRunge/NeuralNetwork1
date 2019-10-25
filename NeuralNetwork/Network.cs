@@ -192,7 +192,7 @@ namespace NeuralNetwork
                         {   
                             
                             
-                            if (Math.Abs(n.error) - highestError < (faultTolerance / 10))
+                            if (Math.Abs(n.error) - highestError < (faultTolerance / 10) && Math.Abs(n.error) >faultTolerance)
                             {
                                 Console.WriteLine("The Training has reached a minimum (correcting the error by "+( Math.Abs(n.error) - highestError) + "), but is still " + highestError + " away from the correct Result. This might indicate that the Network ran into a local minimum");
                                 abortflag = true;
