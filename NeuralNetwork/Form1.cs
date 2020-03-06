@@ -25,18 +25,16 @@ namespace NeuralNetwork
             int var2;
             Int32.TryParse(textBox1.Text, out var1);
             Int32.TryParse(textBox2.Text, out var2);
-            xornet.InputNeurons[0].output = var1;
-            xornet.InputNeurons[1].output = var2;
-            xornet.fire();
+            double[] erg = xornet.calculateForInput(new double[2] { var1, var2 });
 
 
-             textBox3.Text = Math.Round(xornet.outputNeurons[0].output) + " ("+ xornet.outputNeurons[0].output + ")";
+            textBox3.Text = Math.Round(erg[0]) + " (" + erg[0].ToString() + ")";
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)//train
         {
-            xornet.train(0.01, 20000);
+            xornet.trainWithLogging(20000, 0.01);
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -44,9 +42,9 @@ namespace NeuralNetwork
             xornet.RandomizeAllWeights();
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void button3_Click(object sender, EventArgs e)//save
         {
-            xornet.Save("");
+            //xornet.Save("");
         }
     }
 }

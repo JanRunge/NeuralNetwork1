@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -10,13 +12,158 @@ namespace NeuralNetwork
 {
     class Network
     {
-        public InputNeuron[] InputNeurons;
-        private HiddenNeuron[][] hiddenNeurons;
-        public OutputNeuron[] outputNeurons;
+        [JsonPropertyAttribute(DefaultValueHandling=0)]
+        protected InputLayer InputLayer;
+        [JsonPropertyAttribute(DefaultValueHandling = 0)]
+        protected HiddenLayer[] hiddenLayer;
+        [JsonPropertyAttribute(DefaultValueHandling = 0)]
+        protected OutputLayer outputLayer;
+
         public string type;
+        public int epoch = 0;
+
+
+        public double learningRate = 0.005f;
+
+        DBHelper db = DBHelper.getInstance();
+
+        [JsonPropertyAttribute(DefaultValueHandling = 0)]
+        int DatabaseID;
+
 
         public TrainingSet trainingsset;
-        private void validateTraingsset()
+
+        
+        public Network(int InputLayerSize, int[] HiddenLayerSizes, int OutputLayerSize, Function[] activationFuncs )
+        {
+            Random r = new Random();
+            //will create a network with InputLayerSize inputneurons, HiddenLayerSizes.count Hiddenlayers (Each with the size of the array at that position), and OutputLayerSize outputneurons
+            /*****************************
+             InputNeurons
+             ****************************/
+            InputLayer = new InputLayer(InputLayerSize, this);
+            /*****************************
+             HiddenNeurons
+             ****************************/
+
+            hiddenLayer = new HiddenLayer[HiddenLayerSizes.Length];
+
+            for (int i = 0; i < hiddenLayer.Length; i++) //for each layer
+            {
+
+                hiddenLayer[i] = new HiddenLayer(HiddenLayerSizes[i], this);
+                if (i == 0)
+                {
+                    hiddenLayer[i].connectToInputLayer(InputLayer);//connect the hiddenlayer to the inputlayer
+                }
+                else {
+                    hiddenLayer[i].connectToInputLayer(hiddenLayer[i-1]);//connect the hiddenlayer to the hiddenlayer before
+                }
+                hiddenLayer[i].ActivationFunction = activationFuncs[i];
+             }
+
+            /*****************************
+             OutputNeurons
+             ****************************/
+            outputLayer = new OutputLayer(OutputLayerSize, this);
+            outputLayer.connectToInputLayer(hiddenLayer[HiddenLayerSizes.Length - 1]);
+            outputLayer.ActivationFunction = activationFuncs[activationFuncs.Length-1];
+            this.RandomizeAllWeights();
+            this.DatabaseID=db.getNetworkID();
+        }
+        public void trainWithLogging(DateTime until)
+        {
+            validateTraingsset();
+            DateTime now = DateTime.Now;
+            double avgError = 1;
+            double errorSum;
+            int epoch = 0;
+            while (now < until)
+            {
+                errorSum = trainOneEpochWithLogging(true);
+                OutputTrainingLogmessages(epoch, avgError, errorSum);
+                avgError = errorSum ;
+                epoch++;
+            }
+        }
+        public void trainWithLogging(int maxEpoch, int saveEveryNEpoch)
+        {
+            validateTraingsset();
+            int epoch = 0;
+            double lastError = 1;
+            double currentErrAvg = 1;
+            while (epoch <= maxEpoch)
+            {
+                if(epoch>1 && epoch% saveEveryNEpoch == 0)
+                {
+                    this.toFile("automatedSave.json");
+                }
+                currentErrAvg = trainOneEpochWithLogging(true);
+                OutputTrainingLogmessages(epoch, currentErrAvg, lastError);
+                epoch++;
+                lastError = currentErrAvg;
+            }
+            outputTrainingResult(epoch, currentErrAvg);
+        }
+        public void trainWithLogging(int maxEpoch, double desiredAbsoluteError, int saveEveryNEpoch)
+        {
+            //stops when one of the following is true:
+            //1 the network has been Training for maxEpoch epochs
+            //2 average (sum(Absolute errors of all Neurons)) across all trainingsCases is below  desiredAbsoluteError
+            validateTraingsset();
+            int epoch = 0;
+            double lastError = 1;
+            double currentErrAvg = 1;
+            while (epoch <= maxEpoch && currentErrAvg> desiredAbsoluteError)
+            {
+                if (epoch > 1 && epoch % saveEveryNEpoch == 0)
+                {
+                    this.toFile("automatedSave.json");
+                }
+                currentErrAvg = trainOneEpochWithLogging(true);
+                OutputTrainingLogmessages(epoch, currentErrAvg, lastError);
+                epoch++;
+                lastError = currentErrAvg;
+            }
+            outputTrainingResult(epoch, currentErrAvg);
+        }
+        
+        public void test()//output the actual vs desired results fopr every trainingcase
+        {
+            for (int i = 0; i < this.trainingsset.inputs.Length; i++)  //Loop over every input dataset
+            {
+                double[] erg = this.calculateForInput(this.trainingsset.inputs[i]);
+                Console.WriteLine("------ ");
+                Console.WriteLine(trainingsset.results.ToString() + " ");
+                Console.WriteLine(erg.ToString() + " ");
+                Console.WriteLine("------ ");
+            }
+        }
+
+
+        public void RandomizeAllWeights()//randomize weights
+        {
+            InputLayer.randomizeAll();
+            foreach(Layer h in hiddenLayer)
+            {
+                h.randomizeAll();
+            }
+            outputLayer.randomizeAll();
+        }
+
+        public double[] calculateForInput(double[] inputs)
+        {
+            
+            this.setInputs(inputs);
+            this.fire();
+            return getResult();
+            
+        }
+        protected double[] getResult()
+        {
+            return outputLayer.getOutputs();
+        }
+        protected virtual void validateTraingsset()
         {
             if (this.trainingsset == null)
             {
@@ -27,229 +174,129 @@ namespace NeuralNetwork
                 throw new Exception("Length of inputs and results in trainingsset dont match");
             }
         }
-        public Network(int InputLayerSize, int[] HiddenLayerSizes, int OutputLayerSize )
+        protected void fire()
         {
-            Random r = new Random();
-            //will create a network with InputLayerSize inputneurons, HiddenLayerSizes.count Hiddenlayers (Each with the size of the array at that position), and OutputLayerSize outputneurons
-            /*****************************
-             InputNeurons
-             ****************************/
-            InputNeurons = new InputNeuron[InputLayerSize];
-            for (int i=0; i < InputLayerSize; i++ )
+            InputLayer.fire();
+            
+            foreach (HiddenLayer Layer in this.hiddenLayer)
             {
-                InputNeurons[i] = new InputNeuron(r);
-                InputNeurons[i].name = "inputNeuron " + i;
+                Layer.fire();
                 
             }
-            /*****************************
-             HiddenNeurons
-             ****************************/
-            hiddenNeurons = new HiddenNeuron[HiddenLayerSizes.Length][];
-            for (int i = 0; i < hiddenNeurons.Length; i++) //for each layer
+            outputLayer.fire();
+        }
+        protected void setInputs(double[] inputs)
+        {
+            int i = 0;
+            foreach (InputNeuron n in this.InputLayer.getNeurons())
             {
-                hiddenNeurons[i] = new HiddenNeuron[HiddenLayerSizes[i]];//the size of the Layer is given in the input param
-                for (int k = 0; k < hiddenNeurons[i].Length; k++)
-                {
-                    hiddenNeurons[i][k] = new HiddenNeuron(r);
-                    hiddenNeurons[i][k].name = "HiddenNeuron " + k+"|"+i;
-                    
-
-                    if (i == 0)
-                    {
-                        //the inputs come from the inputlayer
-                        foreach (InputNeuron inputneuron in InputNeurons)
-                        {
-                            hiddenNeurons[i][k].addInput(inputneuron);
-                        }
-                    }
-                    else {
-                        foreach (Neuron inputneuron in hiddenNeurons[i - 1])
-                        {
-                            hiddenNeurons[i][k].addInput(inputneuron);
-                        }
-                    }
-
-                }
+                n.input = inputs[i];
+                i++;
             }
-            /*****************************
-             OutputNeurons
-             ****************************/
-            outputNeurons = new OutputNeuron[OutputLayerSize];
-            for (int i = 0; i < outputNeurons.Length; i++)
+        }
+        protected double calculateErrors(double[] desiredResult)
+        {
+            outputLayer.setDesiredResults(desiredResult);
+            double errorsum= outputLayer.calculateErrors();
+            for (int l = hiddenLayer.Count(); l > 0; l--)
             {
-                outputNeurons[i] = new OutputNeuron(r);
-                outputNeurons[i].name = "outputNeuron " + i;
-                foreach (Neuron inputneuron in hiddenNeurons[hiddenNeurons.Length-1])
-                {
-                    outputNeurons[i].addInput(inputneuron);
-                }
+                hiddenLayer[l - 1].calculateErrors();
             }
-            this.RandomizeAllWeights();
+            return errorsum;
         }
         
-        public void RandomizeAllWeights()//randomize weights
-        {
-            foreach (Neuron n in outputNeurons)
-            {
-                n.randomizeWeights();
-            }
-            foreach (Neuron[] Layer in hiddenNeurons)
-            {
-                foreach (Neuron n in Layer)
-                {
-                    n.randomizeWeights();
-                }
-            }
 
+        protected void asjustWeights()
+        {
+            foreach (HiddenLayer Layer in hiddenLayer)
+            {
+                Layer.adjustWeights();
+            }
+            outputLayer.adjustWeights();
         }
-        public void Save(String path)
+
+        private double trainOneEpochWithLogging(bool WriteToDataBase)
         {
-            XElement xDocumentHead = new XElement("Network");
-
-            XElement xInputLayer = new XElement("Input");
-            XElement xHiddenLayers = new XElement("Hidden");
-            XElement xOuputLayer = new XElement("Output");
-            XElement xAxons = new XElement("Axons");
-            xDocumentHead.Add(xInputLayer);
-            xDocumentHead.Add(xHiddenLayers);
-            xDocumentHead.Add(xOuputLayer);
-            xDocumentHead.Add(xAxons);
-
-            foreach (Neuron n in InputNeurons)
+            this.epoch++;
+            double[] sumOfAbsoluteErrors = new double[outputLayer.getNeurons().Count()];
+            double[] sumOfErrors = new double[outputLayer.getNeurons().Count()];
+            for (int i = 0; i < outputLayer.getNeurons().Count(); i++)
             {
-                XAttribute xType = new XAttribute("Type", "input");
-                XAttribute xName = new XAttribute("Name", n.name);
-                XElement xn = new XElement("Neuron", xType, xName);
-                xInputLayer.Add(xn);
+                sumOfAbsoluteErrors[i] = 0f;
+
             }
-            foreach (Neuron[] Layer in hiddenNeurons)
+            for (int i = 0; i < this.trainingsset.inputs.Length; i++)  //Loop over every input dataset
             {
-                XElement xHiddenLayer = new XElement("Layer");
-                xHiddenLayers.Add(xHiddenLayer);
-                foreach (Neuron n in Layer)
-                {
-                    XAttribute xType = new XAttribute("Type", "hidden");
-                    XAttribute xName = new XAttribute("Name", n.name);
-                    XElement xn = new XElement("Neuron", xType, xName);
+                setInputs(this.trainingsset.inputs[i]);
+                this.fire();
+                calculateErrors(this.trainingsset.results[i]);
+                this.asjustWeights();
 
+                double[] betw = outputLayer.getAbsoluteErrors();
 
-                    xHiddenLayer.Add(xn);
-                }
+                sumOfAbsoluteErrors = sumOfAbsoluteErrors.Zip(betw, (x, y) => x + y).ToArray<double>();
             }
-
-            foreach (Neuron n in outputNeurons)
+            sumOfAbsoluteErrors = sumOfAbsoluteErrors.Select(d => d / this.trainingsset.inputs.Length).ToArray<double>();// divide by the amount of trainings-inmputs, so we get the average error for every outputneuron
+            if (WriteToDataBase)
             {
-                XAttribute xType = new XAttribute("Type", "output");
-                XAttribute xName = new XAttribute("Name", n.name);
-                XElement xn = new XElement("Neuron", xType, xName);
-                xOuputLayer.Add(xn);
+                DBHelper.HandleInsert(DatabaseID, sumOfAbsoluteErrors, epoch);
             }
-            xDocumentHead.Save("Root.xml");
+            print(sumOfAbsoluteErrors);
 
-
-
+            return sumOfAbsoluteErrors.Sum();
         }
-        public void fire()
+
+
+
+        private void outputTrainingResult(int epoch, double avgError)
         {
-            foreach (Neuron[] Layer in this.hiddenNeurons)
+            Console.WriteLine("Epoch " + epoch + " Training ended. Error= " + avgError);
+        }
+        private void OutputTrainingLogmessages(int epoch, double currentError, double LastError)
+        {
+            if (epoch % 250 == 0)
             {
-                foreach (Neuron n in Layer)
-                {
-                    n.fire();
-                }
+                Console.WriteLine("Epoch " + epoch + "current error=" + currentError);
             }
-            foreach (Neuron n in this.outputNeurons)
+            if (currentError > LastError)
             {
-                n.fire();
+                Console.WriteLine("Epoch " + epoch + "current error=" + currentError + " the error is ingreasing.");
             }
         }
-        public void train(double faultTolerance, int maxEpochs)
+        /*
+         functions for calculation of sums, averages of output sets. 
+             */
+        void print(double[] thing)
         {
-            validateTraingsset();
-            int epoch = 0;
-            double highestError = 1;//the current maximum error
-            double ErrorSumPerSet=0;
-            double lastErrorSumPerSet = 0;
-            bool abortflag = false;
-            while (highestError > faultTolerance && epoch <= maxEpochs && !abortflag)
+            for(int i=0; i< thing.Length; i++)
             {
-                epoch++;
-                
-                if(lastErrorSumPerSet< ErrorSumPerSet)
-                {
-                    Console.WriteLine("The error is increasing "+ ErrorSumPerSet+" > "+ lastErrorSumPerSet+" "+epoch );
-                    //abortflag = true;
-                }
-                for (int i = 0; i < this.trainingsset.inputs.Length; i++)  //Loop over every input dataset
-                {
-                    highestError = 0;
-                    lastErrorSumPerSet = ErrorSumPerSet;
-                    ErrorSumPerSet = 0;
-                    for (int k = 0; k < this.InputNeurons.Length; k++)  // fill the input-neurons
-                    {
-                        this.InputNeurons[k].output = this.trainingsset.inputs[i][k];
-                    }
-                    this.fire();
-                    int outcounter = 0;
-                    foreach (OutputNeuron n in outputNeurons)
-                    {
-                        n.calculateError(this.trainingsset.results[i][outcounter]);
-                        ErrorSumPerSet += Math.Abs(n.error);
-                        if (Math.Abs(n.error)> highestError)
-                        {   
-                            
-                            
-                            if (Math.Abs(n.error) - highestError < (faultTolerance / 10) && Math.Abs(n.error) >faultTolerance)
-                            {
-                                Console.WriteLine("The Training has reached a minimum (correcting the error by "+( Math.Abs(n.error) - highestError) + "), but is still " + highestError + " away from the correct Result. This might indicate that the Network ran into a local minimum");
-                                abortflag = true;
-                            }
-                            highestError = Math.Abs(n.error);
-                            
-                        }
-                        outcounter++;
-                    }
-                    for(int l=0; l < hiddenNeurons.Count(); l++)
-                    {
-                        Neuron[] layer = hiddenNeurons[hiddenNeurons.Count()-1 - l];
-                        foreach (Neuron n in layer)
-                        {
-                            n.calculateError(-1);
-                        }
-                    }
-
-
-                    //adjust weights now
-
-                    foreach (Neuron[] Layer in hiddenNeurons)
-                    {
-                        foreach (Neuron n in Layer)
-                        {
-                            n.adjustWeights();
-                        }
-                    }
-
-
-                    foreach (Neuron n in outputNeurons)
-                    {
-                        n.adjustWeights();
-                    }
-
-                }
+                Console.Write(thing[i]+" | ");
             }
-            if (abortflag)
-            {
-                Console.WriteLine("Training was aborted. Current Error: " + highestError);
-            }else if (epoch >= maxEpochs)
-            {
-                Console.WriteLine("Training finished all Epochs ("+epoch+"). Remaining Error:" + highestError);
-            }else
-            {
-                Console.WriteLine("Successfull training after "+epoch+" epochs: "+ highestError);
-            }
-           
-
+            Console.Write("\n");
         }
-        
+
+        public void toFile(String path)
+        {
+            Console.WriteLine("saving network to "+path);
+            if (File.Exists(path))
+            {
+                path = path + DateTime.UtcNow.ToString("MM_dd_yyyy_HH_mm_ss");
+            }
+            string json1 = JsonConvert.SerializeObject(this, Formatting.Indented,new JsonSerializerSettings { PreserveReferencesHandling = PreserveReferencesHandling.Objects, TypeNameHandling = TypeNameHandling.All });
+            using (var tw = new StreamWriter(path, true))
+            {
+                tw.WriteLine(json1.ToString());
+                tw.Close();
+            }
+            Console.WriteLine("done Saving Network");
+        }
+
+        public static Network getFromFile(String path)
+        {
+            string json = File.ReadAllText(path, Encoding.UTF8);
+            Network results = JsonConvert.DeserializeObject<Network>(json, new JsonSerializerSettings { PreserveReferencesHandling = PreserveReferencesHandling.Objects, TypeNameHandling = TypeNameHandling.All, ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor });
+            return results;
+        }
+
     }
 }

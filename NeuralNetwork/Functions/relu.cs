@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace NeuralNetwork
 {
-    class Sigmoid
+    class relu : Function
     {
-        public static double output(double x)
+        public double calculate(double x)
         {
-            return 1.0 / (1.0 + Math.Exp(-x));
+            return (0 >= x) ? 0 : x;
         }
 
-        public static double derivative(double x)
+        public double derivative(double x)
         {
-            return x * (1 - x);
+            return (0 >= x) ? 0 : 1;
         }
     }
 }
